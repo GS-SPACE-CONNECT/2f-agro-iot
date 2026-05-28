@@ -1,0 +1,52 @@
+name: CI · IoT/CV
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint Python + Verificar Modelos
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar ruff
+        run: pip install ruff
+
+      - name: Ruff em .py (warning)
+        continue-on-error: true
+        run: |
+          if compgen -G "**/*.py" > /dev/null; then
+            ruff check . --output-format=github
+          else
+            echo "::notice::sem arquivos .py ainda"
+          fi
+
+      - name: Verificar requirements.txt
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install --dry-run -r requirements.txt
+          else
+            echo "::notice::sem requirements.txt"
+          fi
+
+      - name: Bloquear modelos pesados commitados (>50MB)
+        run: |
+          BIG=$(find . -type f \( -name "*.pt" -o -name "*.onnx" -o -name "*.pth" -o -name "*.h5" \) -size +50M 2>/dev/null | head -5)
+          if [ -n "$BIG" ]; then
+            echo "::error::Modelos >50MB no repo (use HuggingFace ou git-lfs):"
+            echo "$BIG"
+            exit 1
+          fi
+          echo "::notice::Sem modelos pesados (ok)"
