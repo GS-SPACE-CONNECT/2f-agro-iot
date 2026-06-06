@@ -70,5 +70,5 @@ a mais pro vídeo: abra `train/colab_treino.ipynb`, ligue GPU, rode tudo, baixe 
 
 ## 🔗 Links
 
-- **Draft PR:** _(link colado no resumo final do chat)_
+- **Draft PR:** <https://github.com/GS-SPACE-CONNECT/2f-agro-iot/pull/11>
 - Board / epic IoT #1: <https://github.com/orgs/GS-SPACE-CONNECT/projects/1>
