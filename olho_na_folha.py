@@ -117,6 +117,13 @@ def main() -> int:
             if frame is None:
                 continue  # frame corrompido — pula sem derrubar o stream
 
+            # Amplia frames pequenos (ex.: imagens de amostra 256px) pra o HUD
+            # ficar legível e a janela num tamanho confortável.
+            hh, ww = frame.shape[:2]
+            if ww < 640:
+                frame = cv2.resize(frame, (640, int(hh * 640 / ww)),
+                                   interpolation=cv2.INTER_LINEAR)
+
             # ---- Inferência (um frame ruim não pode quebrar tudo) ----
             try:
                 pred = classificador.prever(frame)

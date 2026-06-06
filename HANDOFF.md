@@ -7,7 +7,8 @@ Tudo já montado e testado em **`~/dev/2f-agro-iot`** (com o `.venv` já criado)
 
 - **Script completo** `olho_na_folha.py` — modular, FPS na tela, tratamento de
   exceções no stream, integração com a API + fila offline. (rubrica: 30 pts)
-- **Modelo treinado** `models/2fagro-folha-cls-v1.pt` (YOLOv8-cls, 6 classes). <!-- METRICAS -->
+- **Modelo treinado** `models/2fagro-folha-cls-v1.pt` (YOLOv8-cls, 6 classes) —
+  **val top-1 = 99,6%**, e **12/12 = 100%** nas imagens de amostra. Roda a **~43 FPS** em CPU.
 - **Dataset, treino e Colab** (`train/`) — dá pra retreinar quando quiser.
 - **README com diagrama**, spec, plano e o **roteiro do vídeo** (`docs/roteiro-video.md`). (rubrica: 20 pts)
 - **Testes headless** passando + 12 imagens de amostra em `assets/samples/`.
@@ -22,6 +23,7 @@ source .venv/bin/activate
 ```
 
 **1. Ver a demo rodando (2 min)** — confere que abre, classifica e mostra FPS:
+
 ```bash
 python olho_na_folha.py                  # webcam ao vivo (aponte uma folha)
 # sem webcam à mão? testa com as amostras:
@@ -69,4 +71,4 @@ a mais pro vídeo: abra `train/colab_treino.ipynb`, ligue GPU, rode tudo, baixe 
 ## 🔗 Links
 
 - **Draft PR:** _(link colado no resumo final do chat)_
-- Board / epic IoT #1: https://github.com/orgs/GS-SPACE-CONNECT/projects/1
+- Board / epic IoT #1: <https://github.com/orgs/GS-SPACE-CONNECT/projects/1>
