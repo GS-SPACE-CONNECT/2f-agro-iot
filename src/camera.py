@@ -98,27 +98,42 @@ class FonteDeFrames:
         return True, frame
 
     def _ler_captura(self):
-        ok, frame = self._cap.read()
+        # Protege o .read() contra exceções de hardware (ex.: webcam desconectada
+        # no meio do stream). Sem esse try/except, uma falha de I/O no driver
+        # mataria o programa em vez de acionar a reconexão.
+        try:
+            ok, frame = self._cap.read()
+        except Exception:
+            ok, frame = False, None
         if ok and frame is not None:
             return True, frame
 
         # Fim de vídeo: reinicia se loop ligado.
         if self.modo == "video" and self.loop:
-            self._cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            ok, frame = self._cap.read()
+            try:
+                self._cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                ok, frame = self._cap.read()
+            except Exception:
+                ok, frame = False, None
             if ok and frame is not None:
                 return True, frame
 
-        # Webcam que travou: tenta reconectar.
+        # Webcam que travou: tenta reconectar N vezes antes de desistir.
         if self.modo == "camera":
             for tentativa in range(1, self.max_reconexoes + 1):
+                print(f"[WARN] Webcam falhou — reconexao "
+                      f"{tentativa}/{self.max_reconexoes}")
                 try:
                     self._cap.release()
                 except Exception:
                     pass
-                self._cap = cv2.VideoCapture(int(self.source))
-                ok, frame = self._cap.read()
+                try:
+                    self._cap = cv2.VideoCapture(int(self.source))
+                    ok, frame = self._cap.read()
+                except Exception:
+                    ok, frame = False, None
                 if ok and frame is not None:
+                    print("[OK] Webcam reconectada.")
                     return True, frame
             return False, None
 

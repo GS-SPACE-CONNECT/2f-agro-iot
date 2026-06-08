@@ -13,14 +13,30 @@
 
 ## 🎯 Objetivo
 
-O agricultor aponta a câmera pra uma folha suspeita e, em tempo real, o sistema
-identifica a praga/doença com a confiança da previsão. É a "camada de bolso" do
-2F-AGRO: a parte que vive na mão do produtor e conecta com o app mobile e a API
-de alertas.
+### Negócio
 
-A solução usa **classificação** (YOLOv8-cls) — não detecção por caixas. A decisão
-é proposital: o dataset público de folhas (PlantVillage) é de classificação (uma
-folha por imagem), então `cls` é o casamento natural, treina rápido e fica robusto.
+O pequeno agricultor familiar aponta a câmera pra uma folha suspeita e recebe,
+em tempo real, o diagnóstico da praga ou doença — sem internet rápida, sem
+laboratório, sem assistência técnica presencial. Isso permite **intervenção
+precoce**, reduzindo perdas na lavoura e custos com insumos aplicados no escuro.
+É a "camada de bolso" do 2F-AGRO: a parte que vive na mão do produtor e conecta
+com o app mobile e a API de alertas.
+
+### Técnico
+
+Implementar um **pipeline de classificação de imagens em tempo real** com
+YOLOv8-cls (Ultralytics) + OpenCV, capaz de:
+
+- capturar frames de webcam, vídeo ou pasta de imagens;
+- classificar entre **6 classes** (5 pragas + saudável) treinadas sobre o dataset
+  PlantVillage;
+- exibir **HUD** com classe, confiança e FPS sobre o frame;
+- reportar diagnósticos para a API do backend C# .NET, com **fila offline** para
+  resiliência quando a rede estiver indisponível.
+
+A escolha por **classificação** (não detecção por caixas) é proposital: o
+PlantVillage é um dataset de classificação (uma folha por imagem), então `cls` é
+o casamento natural — treina rápido, fica robusto e é eficiente em CPU.
 
 ## 📦 Entregáveis (100 pts)
 
