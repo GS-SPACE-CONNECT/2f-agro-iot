@@ -169,12 +169,15 @@ Dataset: [PlantVillage](https://github.com/spMohanty/PlantVillage-Dataset) (colo
 
 Python 3.9+ · Ultralytics **YOLOv8-cls** · OpenCV · PyTorch · NumPy · Requests
 
-## 👥 Equipe (IoT / Physical Computing — Team `iot-cv`)
+## 👥 Integrantes do Grupo — IoT / Physical Computing (GS 2026.1)
 
 | Nome | RM | GitHub |
 | --- | --- | --- |
 | João Victor Franco | 556790 | [@jota0802](https://github.com/jota0802) |
-| Lucca Saraiva Borges | 554608 | [@lucksza](https://github.com/lucksza) |
+| Bruno Leão | 555563 | [@brnleao](https://github.com/brnleao) |
+| Ruan Melo | 557599 | [@DevRuanVieira](https://github.com/DevRuanVieira) |
+| Rodrigo Jimenez | 558148 | [@roji-menez](https://github.com/roji-menez) |
+| Lucca Borges | 554608 | [@lucksza](https://github.com/lucksza) |
 
 FIAP · 3ES · Global Solution 2026.1 · Disciplina **IoT / Physical Computing**
 
