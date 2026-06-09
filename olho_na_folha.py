@@ -110,7 +110,14 @@ def main() -> int:
     try:
         while True:
             t0 = time.perf_counter()
-            ok, frame = fonte.ler()
+
+            # Leitura resiliente: erro inesperado de hardware não derruba o loop.
+            try:
+                ok, frame = fonte.ler()
+            except Exception as e:
+                print(f"[WARN] Erro ao capturar frame: {e}")
+                continue
+
             if not ok:
                 print("[INFO] Fonte encerrada (sem mais frames).")
                 break
