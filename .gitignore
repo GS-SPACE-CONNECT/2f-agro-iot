@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Dados e artefatos de treino (não versionar — pesados)
+data/
+datasets/
+runs/
+*.cache
+
+# Fila offline de diagnósticos (runtime)
+offline_queue.jsonl
+captures/
+
+# SO / editor
+.DS_Store
+.idea/
+.vscode/
+
+# NÃO ignoramos models/ — o modelo treinado (2fagro-folha-cls-v1.pt) vai versionado
+# pra que o script rode out-of-the-box (rubrica: repo + script executável).
