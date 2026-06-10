@@ -36,7 +36,8 @@ from src.api_client import ApiClient
 from src.camera import FonteDeFrames, FonteIndisponivel
 from src.classifier import Classificador, ModeloIndisponivel
 from src.config import info_classe
-from src.overlay import desenhar_erro, desenhar_hud
+from src.fogo import DetectorFogo
+from src.overlay import desenhar_erro, desenhar_hud, desenhar_hud_fogo
 
 
 def parse_args() -> argparse.Namespace:
@@ -51,6 +52,8 @@ def parse_args() -> argparse.Namespace:
                    help="Confianca minima pra alertar/enviar (0..1).")
     p.add_argument("--api-url", default=config.API_URL, help="Endpoint da API.")
     p.add_argument("--no-api", action="store_true", help="Nao envia pra API.")
+    p.add_argument("--fogo", action="store_true",
+                   help="Modo fogo/queimada (heuristico) em vez da deteccao de pragas.")
     p.add_argument("--headless", action="store_true",
                    help="Nao abre janela (para testes/servidor).")
     p.add_argument("--save", metavar="DIR", default=None,
@@ -70,17 +73,25 @@ def main() -> int:
         print("[ERRO] OpenCV nao instalado. Rode: pip install -r requirements.txt")
         return 2
 
-    try:
-        classificador = Classificador(args.model, config.FALLBACK_MODEL, config.IMG_SIZE)
-    except ModeloIndisponivel as e:
-        print(f"[ERRO] {e}")
-        return 2
+    classificador = None
+    detector_fogo = None
+    if args.fogo:
+        # Modo fogo: heurística pura, sem carregar o modelo de pragas (mais leve).
+        detector_fogo = DetectorFogo(conf_threshold=config.FOGO_CONF_THRESHOLD)
+        print("[OK] Modo FOGO/queimada (heuristico). Sem modelo de pragas carregado.")
+    else:
+        try:
+            classificador = Classificador(args.model, config.FALLBACK_MODEL,
+                                          config.IMG_SIZE)
+        except ModeloIndisponivel as e:
+            print(f"[ERRO] {e}")
+            return 2
 
-    if classificador.usando_fallback:
-        print("[AVISO] Modelo treinado nao encontrado em "
-              f"'{args.model}'. Usando '{config.FALLBACK_MODEL}' (ImageNet) so pra "
-              "testar o pipeline. Treine com: python train/train.py")
-    classificador.aquecer()
+        if classificador.usando_fallback:
+            print("[AVISO] Modelo treinado nao encontrado em "
+                  f"'{args.model}'. Usando '{config.FALLBACK_MODEL}' (ImageNet) so pra "
+                  "testar o pipeline. Treine com: python train/train.py")
+        classificador.aquecer()
 
     # ---- Abre a fonte de frames ----
     try:
@@ -94,7 +105,7 @@ def main() -> int:
     api = ApiClient(
         api_url=args.api_url,
         queue_path=config.OFFLINE_QUEUE_PATH,
-        min_interval_s=config.API_MIN_INTERVAL_S,
+        min_interval_s=config.ALERT_MIN_INTERVAL_S,
         habilitado=not args.no_api,
     )
 
@@ -106,6 +117,7 @@ def main() -> int:
     n_frames = 0
     n_alertas = 0
     ultimo_log = 0.0
+    ultimo_alerta = 0.0   # throttle: conta/dispara no máx 1 alerta por segundo
 
     try:
         while True:
@@ -131,27 +143,45 @@ def main() -> int:
                 frame = cv2.resize(frame, (640, int(hh * 640 / ww)),
                                    interpolation=cv2.INTER_LINEAR)
 
-            # ---- Inferência (um frame ruim não pode quebrar tudo) ----
-            try:
-                pred = classificador.prever(frame)
-            except ModeloIndisponivel as e:
-                desenhar_erro(frame, "Falha de inferencia")
-                if not headless:
-                    cv2.imshow(config.WINDOW_NAME, frame)
-                    if cv2.waitKey(1) & 0xFF == ord("q"):
-                        break
-                print(f"[WARN] {e}")
-                continue
-
-            classe = info_classe(pred.classe)
-            conf = pred.confianca
+            # ---- Análise do frame: pragas (modelo) ou fogo (heurística) ----
+            det = None
+            if args.fogo:
+                det = detector_fogo.analisar(frame)  # nunca lança (robusto)
+                conf = det.confianca
+                rotulo_log = "FOGO" if det.tem_fogo else "sem fogo"
+                e_alerta = det.tem_fogo
+                classe_api = "fogo"
+            else:
+                try:
+                    pred = classificador.prever(frame)
+                except ModeloIndisponivel as e:
+                    desenhar_erro(frame, "Falha de inferencia")
+                    if not headless:
+                        try:
+                            cv2.imshow(config.WINDOW_NAME, frame)
+                            if cv2.waitKey(1) & 0xFF == ord("q"):
+                                break
+                        except cv2.error:
+                            headless = True
+                    print(f"[WARN] {e}")
+                    continue
+                classe = info_classe(pred.classe)
+                conf = pred.confianca
+                rotulo_log = classe.label
+                e_alerta = conf >= args.conf and not classe.saudavel
+                classe_api = pred.classe
 
             # ---- Decide alerta + envio pra API ----
+            # Alerta é EVENTO, não estado: mesmo com fogo/praga na tela por vários
+            # segundos, contamos e enviamos no máximo 1x por segundo (throttle). O
+            # HUD continua mostrando o estado a cada frame; só o alerta é limitado.
             enviando = False
-            if conf >= args.conf and not classe.saudavel:
+            agora_alerta = time.time()
+            if e_alerta and (agora_alerta - ultimo_alerta) >= config.ALERT_MIN_INTERVAL_S:
                 n_alertas += 1
-                status = api.enviar(pred.classe, conf, geo={})
+                status = api.enviar(classe_api, conf, geo={})
                 enviando = status == "enviado"
+                ultimo_alerta = agora_alerta
 
             # ---- FPS suavizado ----
             tempos.append(time.perf_counter())
@@ -162,7 +192,10 @@ def main() -> int:
                     fps = (len(tempos) - 1) / dt
 
             # ---- HUD ----
-            desenhar_hud(frame, classe.label, conf, fps, classe.saudavel, enviando)
+            if args.fogo:
+                desenhar_hud_fogo(frame, det, fps, enviando)
+            else:
+                desenhar_hud(frame, classe.label, conf, fps, classe.saudavel, enviando)
 
             # ---- Saída (janela ou headless) ----
             if args.save:
@@ -182,7 +215,7 @@ def main() -> int:
             agora = time.time()
             if agora - ultimo_log >= 1.0:
                 fila = api.tamanho_fila()
-                print(f"[{n_frames:05d}] {classe.label:28s} conf={conf*100:5.1f}% "
+                print(f"[{n_frames:05d}] {rotulo_log:28s} conf={conf*100:5.1f}% "
                       f"fps={fps:4.1f} alertas={n_alertas} fila_offline={fila}")
                 ultimo_log = agora
 

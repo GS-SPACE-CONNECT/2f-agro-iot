@@ -121,6 +121,71 @@ def desenhar_hud(frame: np.ndarray, label: str, conf: float, fps: float,
     return frame
 
 
+def desenhar_hud_fogo(frame: np.ndarray, det, fps: float,
+                      enviando: bool = False) -> np.ndarray:
+    """
+    HUD do modo fogo: estado (FOGO / sem fogo), confiança, cintilação e FPS,
+    além de um retângulo em volta da região de chama. Escala com a largura,
+    mesmo padrão visual do HUD de pragas.
+    """
+    h, w = frame.shape[:2]
+    s = max(0.5, min(w / 640.0, 2.2))
+    cor_status = _VERMELHO if det.tem_fogo else _VERDE
+
+    # Caixa em volta da maior região quente (mesmo sem cruzar o limiar, ajuda a ver).
+    if det.bbox is not None:
+        x, y, bw, bh = det.bbox
+        cv2.rectangle(frame, (x, y), (x + bw, y + bh), cor_status,
+                      max(1, int(round(2 * s))), cv2.LINE_AA)
+
+    banner_h = int(70 * s)
+    pad = int(14 * s)
+    fs_label = 0.7 * s
+    fs_small = 0.52 * s
+    th = max(1, int(round(2 * s)))
+    th1 = max(1, int(round(1.2 * s)))
+    y1 = int(banner_h * 0.45)
+    y2 = int(banner_h * 0.82)
+
+    _banner(frame, 0, 0, w, banner_h)
+
+    # FPS à direita.
+    fps_txt = f"FPS: {fps:4.1f}"
+    (fw, _), _ = cv2.getTextSize(fps_txt, _FONTE, fs_small, th)
+    fps_x = w - fw - pad
+    cv2.putText(frame, fps_txt, (fps_x, y1), _FONTE, fs_small, _AMARELO, th, cv2.LINE_AA)
+    if enviando:
+        api_txt = "API <<"
+        (aw, _), _ = cv2.getTextSize(api_txt, _FONTE, fs_small, th1)
+        cv2.putText(frame, api_txt, (w - aw - pad, y2), _FONTE, fs_small, _VERMELHO,
+                    th1, cv2.LINE_AA)
+
+    # Status + rótulo.
+    cx = pad + int(10 * s)
+    cv2.circle(frame, (cx, y1 - int(6 * s)), int(10 * s), cor_status, -1)
+    cv2.circle(frame, (cx, y1 - int(6 * s)), int(10 * s), _BRANCO, th1, cv2.LINE_AA)
+    label = "FOGO DETECTADO" if det.tem_fogo else "Sem fogo"
+    cv2.putText(frame, label, (cx + int(18 * s), y1), _FONTE, fs_label, _BRANCO, th,
+                cv2.LINE_AA)
+
+    # Linha 2: confiança + cintilação.
+    info = f"Conf: {int(round(det.confianca*100))}%  Cintil: {int(round(det.flicker*100))}%"
+    cv2.putText(frame, info, (cx + int(18 * s), y2), _FONTE, fs_small, _BRANCO, th1,
+                cv2.LINE_AA)
+
+    # Rodapé.
+    foot_h = int(26 * s)
+    _banner(frame, 0, h - foot_h, w, h)
+    fy = h - int(foot_h * 0.3)
+    cv2.putText(frame, "2F-AGRO - Olho na Lavoura (fogo)", (pad, fy), _FONTE, 0.5 * s,
+                _BRANCO, th1, cv2.LINE_AA)
+    ajuda = "[q] sair"
+    (jw, _), _ = cv2.getTextSize(ajuda, _FONTE, 0.5 * s, th1)
+    cv2.putText(frame, ajuda, (w - jw - pad, fy), _FONTE, 0.5 * s, _BRANCO, th1,
+                cv2.LINE_AA)
+    return frame
+
+
 def desenhar_erro(frame: np.ndarray, mensagem: str) -> np.ndarray:
     """HUD mínimo de erro (ex.: frame inválido) — nunca deixa a tela 'muda'."""
     h, w = frame.shape[:2]

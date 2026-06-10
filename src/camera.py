@@ -57,8 +57,8 @@ class FonteDeFrames:
     def _abrir(self) -> None:
         if self.modo == "camera":
             indice = int(self.source)
-            self._cap = cv2.VideoCapture(indice)
-            if not self._cap or not self._cap.isOpened():
+            self._cap = self._abrir_camera(indice)
+            if self._cap is None:
                 raise FonteIndisponivel(
                     f"Webcam no indice {indice} indisponivel. Conecte uma camera "
                     f"ou use --source <pasta_de_imagens> para testar sem webcam."
@@ -77,6 +77,33 @@ class FonteDeFrames:
                 raise FonteIndisponivel(f"Nenhuma imagem em: {self.source}")
         elif self.modo == "imagem":
             self._imgs = [self.source]
+
+    def _abrir_camera(self, indice: int):
+        """Abre a webcam: OpenCV primeiro; se falhar, fallback WinRT (Windows).
+
+        Em alguns Windows o backend clássico do OpenCV (MSMF/DSHOW) quebra por
+        resíduo de driver antigo, mas o caminho WinRT — o mesmo do app Câmera —
+        segue funcionando. Retorna um objeto com a interface do VideoCapture
+        (read/release/isOpened) ou None se nada abriu.
+        """
+        cap = cv2.VideoCapture(indice)
+        if cap is not None and cap.isOpened():
+            return cap
+        try:
+            cap.release()
+        except Exception:
+            pass
+        try:
+            from src.camera_winrt import CameraWinRT, CameraWinRTIndisponivel
+        except ImportError:
+            return None  # fora do Windows (ou sem winrt-*) não há fallback
+        try:
+            camera = CameraWinRT(indice)
+        except CameraWinRTIndisponivel as e:
+            print(f"[WARN] Fallback WinRT tambem falhou: {e}")
+            return None
+        print("[INFO] OpenCV nao abriu a webcam; usando backend WinRT do Windows.")
+        return camera
 
     # ----------------------------------------------------------------- #
     def ler(self):
@@ -128,7 +155,9 @@ class FonteDeFrames:
                 except Exception:
                     pass
                 try:
-                    self._cap = cv2.VideoCapture(int(self.source))
+                    self._cap = self._abrir_camera(int(self.source))
+                    if self._cap is None:
+                        continue
                     ok, frame = self._cap.read()
                 except Exception:
                     ok, frame = False, None

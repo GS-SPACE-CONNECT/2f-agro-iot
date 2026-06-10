@@ -21,5 +21,8 @@ captures/
 .idea/
 .vscode/
 
+# Git worktrees temporários (trabalho local — não versionar)
+.worktrees/
+
 # NÃO ignoramos models/ — o modelo treinado (2fagro-folha-cls-v1.pt) vai versionado
 # pra que o script rode out-of-the-box (rubrica: repo + script executável).

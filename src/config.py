@@ -34,11 +34,17 @@ API_URL = os.getenv("AGRO_API_URL", "http://localhost:5000/api/diagnostico")
 # Fila local pra diagnósticos que não conseguiram subir (modo offline).
 OFFLINE_QUEUE_PATH = os.path.join(ROOT_DIR, "offline_queue.jsonl")
 
-# Intervalo mínimo (s) entre dois envios da MESMA praga — evita floodar a API.
-API_MIN_INTERVAL_S = float(os.getenv("AGRO_API_MIN_INTERVAL_S", "5.0"))
+# Intervalo mínimo (s) entre dois ALERTAS — no máximo 1 por segundo por padrão.
+# Sem isso o contador somaria a cada frame (~30/s) e floodaria a API/fila offline.
+# Vale tanto pro contador quanto pro envio: alerta é um EVENTO, não um por quadro.
+ALERT_MIN_INTERVAL_S = float(os.getenv("AGRO_ALERT_MIN_INTERVAL_S", "1.0"))
 
 # Nome da janela do OpenCV.
 WINDOW_NAME = "2F-AGRO - Olho na Folha"
+
+# --- Modo fogo/queimada (heurístico, complementar) ---
+# Confiança mínima pra disparar alerta de fogo. Ver src/fogo.py.
+FOGO_CONF_THRESHOLD = float(os.getenv("AGRO_FOGO_CONF_THRESHOLD", "0.55"))
 
 
 # --------------------------------------------------------------------------- #
