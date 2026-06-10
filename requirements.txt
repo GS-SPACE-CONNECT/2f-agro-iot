@@ -6,7 +6,7 @@
 # Em GPU/Colab você pode soltar esses pins, mas estes valores reproduzem 1:1 o ambiente.
 
 ultralytics==8.4.60
-torch==2.2.2
+torch==2.12.0
 torchvision==0.17.2
 opencv-python==4.10.0.84
 numpy==1.26.4
