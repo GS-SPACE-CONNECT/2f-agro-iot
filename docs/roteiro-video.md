@@ -1,83 +1,126 @@
 # 🎬 Roteiro do Vídeo — Olho na Folha (50 pts)
 
-**Duração alvo:** 3:00–3:30 (máx 4 min) · **Grave em 1080p** · fale com calma.
-**Dica:** ensaie 1x cronometrado. Mostre a TELA REAL rodando (não slide).
+**Duração alvo:** 3:00–3:30 (máx 4 min) · **Grave em 1080p horizontal** · microfone perto · fale com calma.
+**Regra de ouro:** mostre a **TELA REAL rodando** (não slide). É o que vale os 50 pontos.
 
-> Checklist da rubrica que o vídeo PRECISA mostrar: ✅ contexto · ✅ arquitetura ·
-> ✅ script rodando ao vivo · ✅ **FPS na tela** · ✅ robustez (luz/oclusão).
+> 📌 **Estratégia desta gravação:** o **foco do projeto é a detecção de pragas**
+> (modelo YOLOv8 treinado e testado — mostramos a evidência). A **demonstração ao
+> vivo é do modo fogo**, que roda de forma confiável com uma vela. Os dois usam o
+> mesmo script, então a demo ao vivo do fogo já evidencia **FPS**, **robustez** e
+> **tratamento de exceções** que a rubrica pede.
+>
+> ✅ **Checklist da rubrica:** contexto · arquitetura · script rodando ao vivo ·
+> **FPS na tela** · robustez (iluminação, ruído, "pegadinha" de cor).
+>
+> 🗣️ Para gravar lendo direto, use **[falas-video.txt](falas-video.txt)** (teleprompter puro).
+> Este arquivo é a versão de produção (com deixas de tela e tempos).
 
 ---
 
 ## 0:00 – 0:25 · Abertura + contexto
 
-> "Oi, somos a equipe do **2F-AGRO**. Esse é o módulo de **IoT / Visão Computacional**,
-> o **Olho na Folha**. O pequeno produtor aponta a câmera pra uma folha suspeita e,
-> em tempo real, o sistema diz qual praga ou doença está atacando — sem internet
-> rápida, sem laboratório."
+**[FALA]** o pitch de abertura (ver `falas-video.txt`): 70% do alimento vem do
+pequeno produtor → 2F-AGRO → o Olho na Folha detecta praga na folha em tempo real.
 
-**[TELA]** Logo/título do projeto ou o repositório aberto.
+**[TELA]** título "2F-AGRO · Olho na Folha" ou o repositório aberto.
 
-## 0:25 – 1:00 · Arquitetura
+## 0:25 – 1:05 · Proposta + exemplo + o modelo de pragas (foco)
 
-> "Por baixo: a webcam manda o frame pro **YOLOv8 de classificação**, que treinamos
-> em cima do dataset PlantVillage com 6 classes de pragas. O resultado aparece na
-> tela com a confiança e o **FPS**, e — quando a confiança passa de 70% — o
-> diagnóstico é enviado pra nossa **API de alertas em C#**. Se a API estiver fora do
-> ar, ele guarda numa fila offline e reenvia depois."
+**[FALA]** a proposta com um **exemplo concreto** (ver `falas-video.txt`): aponta a
+câmera pra um pé de tomate com manchas → "requeima, 95%" em 2 segundos. Depois explique
+que por baixo é um **YOLOv8 treinado no PlantVillage** (6 classes) → HUD com confiança e
+FPS → API C# com **fila offline**. **Diga que o modelo foi treinado e testado, e
+reconheceu as 6 classes.**
 
-**[TELA]** Mostre o **diagrama Mermaid** do README (pipeline). Aponte o fluxo:
-webcam → modelo → HUD → API/fila.
+**[TELA]** o **diagrama Mermaid** do README e, como **evidência dos testes de praga**,
+uma destas opções (escolha a mais fácil):
 
-## 1:00 – 1:20 · Por que classificação (mostra maturidade)
+- as imagens de `assets/samples/` com os rótulos, **ou**
+- um print do resultado do teste `tools/conferir_amostras.py` (acertos nas 6 classes), **ou**
+- rode por uns segundos `python olho_na_folha.py --source assets/samples/` (passa o
+  modelo pelas amostras e mostra a classe detectada — prova o modelo funcionando).
 
-> "Uma decisão técnica importante: usamos **classificação**, não detecção por caixas.
-> O PlantVillage é um dataset de classificação, então essa escolha treina mais rápido
-> e fica mais robusta — exatamente o que a aplicação em tempo real precisa."
+## 1:05 – 1:20 · Ponte pra demo ao vivo
 
-**[TELA]** Trecho da spec/README com a "Nota honesta de escopo".
+**[FALA]** "Além da detecção de pragas, que é o foco, o Olho na Folha tem um segundo
+modo — e é esse que vamos mostrar rodando ao vivo agora: a **detecção de queimada**."
+Conecte com o **Programa Queimadas do INPE** (satélite) → a câmera é a contraparte no chão.
 
-## 1:20 – 2:30 · DEMO AO VIVO (o coração — capriche)
+## 1:30 – 2:40 · DEMO AO VIVO — fogo (o coração)
 
-> "Vamos ver rodando."
+**[TELA]** rode `testar_fogo.bat` (ou `python olho_na_folha.py --fogo`) e mostre, nesta ordem:
 
-**[TELA]** Rode `python olho_na_folha.py` (ou `--source assets/samples/`). Mostre:
+1. **A janela abrindo** e o **FPS** no canto → *fale "olha o FPS, ~30 quadros por segundo"*.
+2. **Acenda uma vela/isqueiro** (ou um vídeo de queimada no celular) → a barra vira
+   **vermelha**, **"FOGO DETECTADO"**, e o **retângulo** marca a chama. *Fale a confiança.*
+3. **A pegadinha:** aponte pra algo **laranja parado** (capa, cadeira) → continua
+   **"Sem fogo"**. Explique: separa fogo de coisa parada pela **cintilação** (chama tremula).
+4. **🔆 Robustez:** mexa na **luz** e **balance** a câmera → continua acompanhando sem travar.
 
-1. **A janela abrindo** e o **FPS** no canto superior direito → *fale "olha o FPS aqui"*.
-2. Aproxime uma **folha doente** (impressa ou na planta) → a classe muda e a barra
-   de confiança sobe. Leia em voz alta: *"detectou ferrugem com 92%"*.
-3. Mostre uma **folha saudável** → status fica **verde** e não dispara alerta.
-4. **Robustez — iluminação:** diminua/aumente a luz (ou afaste/aproxime) e mostre
-   que continua classificando.
-5. **Robustez — oclusão:** tampe parte da folha com o dedo → mostre que não trava.
-6. (Opcional) terminal com o **mock da API** recebendo o POST do diagnóstico.
+## 2:40 – 3:05 · Robustez de engenharia (Script — 30 pts)
 
-## 2:30 – 3:00 · Robustez de engenharia + fechamento
+**[FALA]** o stream tem **tratamento de exceções**: webcam cai → reconecta; frame
+corrompido → pula; API some → enfileira. Não quebra. Modular e com `requirements.txt` fixo.
 
-> "No código tem tratamento de exceções em todo o stream: se a webcam cai, ele
-> reconecta; se um frame vem corrompido, ele pula; se a API some, ele enfileira.
-> O programa não quebra. Tudo modularizado e com `requirements.txt` fixo."
+**[TELA]** scroll rápido no `olho_na_folha.py` mostrando os `try/except` por frame e o
+`try/finally` que **sempre libera a câmera**.
 
-**[TELA]** Rápido scroll no `olho_na_folha.py` mostrando os `try/except` e o `finally`.
+## 3:05 – 3:30 · Fechamento
 
+**[FALA]**
 > "Esse é o Olho na Folha — a camada de bolso do 2F-AGRO, levando visão computacional
-> pra mão do agricultor. Obrigado!"
+> pra mão de quem alimenta o Brasil."
+>
+> **"Lançamos satélites no espaço. Está na hora de eles olharem pra cá também."**
+>
+> "Obrigado!"
 
-**[TELA]** Créditos: **João Victor Franco (RM 556790)** e **Lucca Saraiva Borges (RM 554608)** · FIAP 3ES · GS 2026.1.
+**[TELA]** créditos com **nome completo dos integrantes** (abaixo) · FIAP 3ES · GS 2026.1.
 
 ---
 
-### Comandos prontos pra gravar
+## 🎥 Comandos prontos pra gravar
+
+No Windows, o jeito mais rápido é o atalho — **dois cliques**:
+
+- `testar_fogo.bat` → demo de **fogo** ao vivo (a demonstração principal)
+- `testar_camera.bat` → modo **pragas** ao vivo (caso queira mostrar também)
+
+Ou pela linha de comando:
 
 ```bash
-source .venv/bin/activate
+# ambiente (Windows): .\.venv-iot-test\Scripts\Activate.ps1
+# ambiente (Linux/Mac): source .venv/bin/activate
 
-# Demo principal (webcam):
-python olho_na_folha.py
+# Demo ao vivo — fogo:
+python olho_na_folha.py --fogo
 
-# Se a webcam falhar na hora, use as imagens de amostra:
+# Evidência do modelo de pragas (passa pelas amostras reais):
 python olho_na_folha.py --source assets/samples/
-
-# (Opcional) mostrar a API recebendo — em 2 terminais:
-python tools/mock_api.py 5000
-python olho_na_folha.py --api-url http://localhost:5000/api/diagnostico
 ```
+
+---
+
+## ✅ Antes de gravar (checklist de 1 minuto)
+
+- [ ] **Ensaiar 1x cronometrado** — passar de 4 min leva desconto.
+- [ ] Fechar apps que usam a webcam (OBS, Teams, navegador) antes de abrir a demo.
+- [ ] Ter à mão: uma **chama** (vela/isqueiro ou vídeo) e a **evidência de pragas** (print/amostras).
+- [ ] Conferir que o **FPS aparece** na tela (exigência explícita da rubrica).
+- [ ] Mostrar a **pegadinha de cor** (laranja parado = sem fogo) — é o que prova robustez.
+- [ ] **Legendas embutidas** + música de fundo baixa (≈10%) elevam o profissionalismo.
+- [ ] Créditos no fim com **nome completo dos integrantes** (rubrica exige).
+
+---
+
+## 👥 Créditos (nome completo dos integrantes)
+
+| Nome completo | RM | GitHub |
+| --- | --- | --- |
+| João Victor Franco | 556790 | [@jota0802](https://github.com/jota0802) |
+| Bruno Leão | 555563 | [@brnleao](https://github.com/brnleao) |
+| Ruan Melo | 557599 | [@DevRuanVieira](https://github.com/DevRuanVieira) |
+| Rodrigo Jimenez | 558148 | [@roji-menez](https://github.com/roji-menez) |
+| Lucca Borges | 554608 | [@lucksza](https://github.com/lucksza) |
+
+FIAP · 3ES · Global Solution 2026.1 · **IoT / Physical Computing**

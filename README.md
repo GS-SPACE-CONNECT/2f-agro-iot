@@ -5,9 +5,11 @@
 > Matéria: **IoT / Physical Computing** (100 pts) · FIAP 3ES · GS 2026.1
 
 [![Hub](https://img.shields.io/badge/hub-2f--agro-success)](https://github.com/GS-SPACE-CONNECT/2f-agro)
-[![Python](https://img.shields.io/badge/Python-3.9%2B-3776ab?logo=python&logoColor=white)](https://www.python.org)
+[![Python](https://img.shields.io/badge/Python-3.9--3.11-3776ab?logo=python&logoColor=white)](https://www.python.org)
 [![YOLOv8](https://img.shields.io/badge/Ultralytics-YOLOv8--cls-0b23a9)](https://docs.ultralytics.com)
 [![OpenCV](https://img.shields.io/badge/OpenCV-4.10-5C3EE8?logo=opencv&logoColor=white)](https://opencv.org)
+
+> 🎥 **Vídeo da solução:** [`VIDEO-IOT.mp4`](VIDEO-IOT.mp4) — demo ao vivo + arquitetura + FPS.
 
 ---
 
@@ -32,7 +34,9 @@ YOLOv8-cls (Ultralytics) + OpenCV, capaz de:
   PlantVillage;
 - exibir **HUD** com classe, confiança e FPS sobre o frame;
 - reportar diagnósticos para a API do backend C# .NET, com **fila offline** para
-  resiliência quando a rede estiver indisponível.
+  resiliência quando a rede estiver indisponível;
+- oferecer um **modo fogo/queimada** complementar (`--fogo`, heurístico — ver §5),
+  que estende o mesmo pipeline pra detectar incêndio na lavoura sem novo treino.
 
 A escolha por **classificação** (não detecção por caixas) é proposital: o
 PlantVillage é um dataset de classificação (uma folha por imagem), então `cls` é
@@ -40,7 +44,7 @@ o casamento natural — treina rápido, fica robusto e é eficiente em CPU.
 
 ## 📦 Entregáveis (100 pts)
 
-- **Vídeo da solução** (50 pts) — demo + arquitetura + FPS visível
+- **Vídeo da solução** (50 pts) — demo + arquitetura + FPS visível → [`VIDEO-IOT.mp4`](VIDEO-IOT.mp4) ✔
 - **Script Python** (30 pts) — modularizado + tratamento de exceções **obrigatório**
 - **Repositório Git** (20 pts) — este repo + `requirements.txt` + README + diagrama
 
@@ -82,14 +86,15 @@ flowchart LR
 
 ## 🗂️ Estrutura
 
-```
+```text
 2f-agro-iot/
 ├── olho_na_folha.py        # ▶ entrypoint (loop de vídeo em tempo real)
 ├── src/
 │   ├── config.py           # threshold, endpoint, mapa de classes PT-BR
 │   ├── classifier.py       # wrapper YOLOv8-cls
-│   ├── camera.py           # fonte de frames (webcam/vídeo/imagens)
-│   ├── overlay.py          # HUD: classe + confiança + FPS
+│   ├── camera.py           # fonte de frames (webcam/vídeo/imagens) + fallback WinRT
+│   ├── overlay.py          # HUD: classe + confiança + FPS (e HUD do modo fogo)
+│   ├── fogo.py             # modo fogo/queimada heurístico (cor + cintilação)
 │   └── api_client.py       # POST /diagnostico + fila offline
 ├── train/
 │   ├── prepare_dataset.py  # PlantVillage -> 6 classes -> split 80/20
@@ -106,8 +111,12 @@ flowchart LR
 
 ### 1. Ambiente
 
+> **Python 3.9–3.11** (recomendado **3.10** ou **3.11**). Os pins de `torch==2.2.2`
+> em `requirements.txt` só têm wheel oficial até a 3.11 — usar 3.12+ quebra a
+> instalação. Essa faixa garante a reprodutibilidade exata do ambiente.
+
 ```bash
-python -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
@@ -139,11 +148,32 @@ python olho_na_folha.py --api-url http://localhost:5000/api/diagnostico   # term
 Payload enviado: `{ "praga", "confianca", "timestamp", "geo" }`.
 Use `--no-api` pra desligar o envio.
 
+### 5. Modo fogo / queimada (complementar)
+
+```bash
+python olho_na_folha.py --fogo                      # webcam: detecta fogo na lavoura
+python olho_na_folha.py --fogo --source demo.mp4    # ou um vídeo de queimada
+```
+
+Além das pragas, o Olho na Folha tem um **modo fogo/queimada** heurístico (sem ML,
+sem download de pesos — roda em qualquer máquina, ideal pra edge barato). Ele combina
+**três sinais** pra evitar falso positivo: **cor** quente (vermelho/laranja/amarelo
+saturado e brilhante, em HSV + BGR), **área** mínima da região, e **cintilação** — a
+chama "treme" entre frames, enquanto pôr do sol, lâmpada e roupa laranja são estáticos
+e são descartados. Implementação em `src/fogo.py`; validação reproduzível (chama
+sintética × folha verde × pôr do sol estático) em `tools/teste_fogo.py`.
+
+> **Encaixe com o tema espacial:** queimada é desastre monitorado por satélite — cf.
+> o [Programa Queimadas do INPE](https://terrabrasilis.dpi.inpe.br/queimadas/) e a
+> *International Charter Space and Major Disasters*. O modo fogo é a contraparte "no
+> chão" desse olhar de cima: o mesmo evento, visto pela câmera na lavoura.
+
 ## 🏋️ Treinar o modelo
 
 O modelo já vem treinado em `models/2fagro-folha-cls-v1.pt`. Pra retreinar:
 
 **Local (CPU/GPU):**
+
 ```bash
 python train/prepare_dataset.py --src <pasta_PlantVillage>/raw/color
 python train/train.py --epochs 20           # use --device 0 se tiver GPU
@@ -160,8 +190,11 @@ Dataset: [PlantVillage](https://github.com/spMohanty/PlantVillage-Dataset) (colo
 | --- | --- |
 | **Tratamento de exceções** no stream | `try/except` por frame + `try/finally` que libera a câmera (`olho_na_folha.py`) |
 | **FPS visível** na tela | `src/overlay.py` (canto superior direito) |
-| Robustez a iluminação/oclusão | classificação YOLOv8 + augmentation no treino |
+| Variações de **iluminação** | classificação YOLOv8 + augmentation no treino |
+| **Ruído** de imagem / frame corrompido | frame inválido é pulado sem derrubar o loop (`olho_na_folha.py`) |
+| **Oclusão** parcial da folha | classificação robusta (top-1 + confiança), não depende de caixa exata |
 | Webcam cai no meio | reconexão automática (`src/camera.py`) |
+| Backend de captura falha ao abrir | fallback automático WinRT no Windows (`src/camera_winrt.py`) |
 | API fora do ar | fila offline + reenvio (`src/api_client.py`) |
 | `requirements.txt` com versões fixas | ✔ |
 

@@ -1,0 +1,29 @@
+Setenta por cento da comida do brasileiro vem do pequeno agricultor familiar. E ele é justamente quem menos tem acesso a tecnologia. O 2F-AGRO existe pra mudar isso: leva tecnologia de satélite pro celular do produtor, de graça e em português.
+
+Esse é o nosso módulo de visão computacional: o Olho na Folha. A proposta é simples. O agricultor aponta a câmera pra uma folha, e o app diz na hora qual praga está atacando a lavoura.
+
+Um exemplo: ele aponta pra um pé de tomate com manchas. Em dois segundos aparece na tela: requeima, noventa e cinco por cento. E a orientação do que fazer. Sem internet boa, sem laboratório, sem precisar de um agrônomo do lado.
+
+Por baixo, é um modelo de inteligência artificial, o YOLOv8, que a gente treinou com milhares de fotos de folha, em seis classes: cinco pragas e folha saudável. A gente testou nas nossas amostras e ele acertou as seis.
+
+Quando ele detecta uma praga, manda um alerta pra nossa API. E se a internet estiver fora, ele guarda o alerta e reenvia sozinho quando a conexão voltar. No campo, nenhum diagnóstico se perde.
+
+A detecção de praga é o foco do projeto. Mas o Olho na Folha tem um segundo modo, e é esse que a gente vai mostrar rodando ao vivo agora: a detecção de queimada.
+
+E faz sentido: queimada é um desastre que o Brasil já monitora por satélite, no Programa Queimadas do INPE. A gente faz a mesma coisa, só que aqui no chão, com a câmera na lavoura.
+
+Vamos ver rodando. Repara no FPS aqui no canto: uns trinta quadros por segundo.
+
+Quando aparece fogo, ele marca na hora: fogo detectado, com um quadro em volta da chama.
+
+E ele não se engana fácil. Uma coisa laranja parada, tipo essa, continua dando "sem fogo". Ele sabe a diferença porque chama tremula, e coisa parada não.
+
+E aguenta o ambiente real: eu mudo a luz, balanço a câmera, e ele continua acompanhando sem travar.
+
+No código, tem tratamento de erro em tudo. Webcam caiu? Reconecta. Imagem corrompida? Pula. API fora do ar? Guarda pra depois. O programa não quebra. E as versões das bibliotecas estão travadas, pra qualquer pessoa rodar exatamente igual.
+
+Esse é o Olho na Folha: tecnologia de ponta na mão de quem alimenta o Brasil.
+
+Lançamos satélites no espaço. Está na hora de eles olharem pra cá também.
+
+Obrigado!
